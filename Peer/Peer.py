@@ -8,7 +8,7 @@ from threading import Thread
 IP_REG = r'\b(?:\d{1,3}\.){3}\d{1,3}\b'
 NAME = 'Yuval'
 SERVER_ADDRESS = '10.0.0.29'
-SERVER_PORT = 9999
+SERVER_PORT = 9998
 
 
 class Peer:
@@ -31,14 +31,21 @@ class Peer:
         self.server_sock = socket(AF_INET, SOCK_STREAM)
 
         self.client_sock = socket(AF_INET, SOCK_STREAM)
+        #send my creds to the admin.
+        self.send_cred_to_server()
 
         # BIND
-        self.server_sock.bind((SERVER_ADDRESS, SERVER_PORT))
-        self.server_sock.listen(5)
+        #self.server_sock.bind((SERVER_ADDRESS, SERVER_PORT))
+        #self.server_sock.listen(5)
 
-        print("starting peer...")
-        self.listen()
+        #print("starting peer...")
+        #self.listen()
 
+    def send_cred_to_server(self):
+        self.client_sock.connect((SERVER_ADDRESS, SERVER_PORT))
+        self.client_sock.sendall('my creds...'.encode())
+        data = self.client_sock.recv(1024).decode()
+        print(data)
 
     def listen(self):
 
@@ -52,4 +59,3 @@ class Peer:
 if __name__ == "__main__":
     My_Peer = Peer(NAME)
     print(My_Peer)
-
