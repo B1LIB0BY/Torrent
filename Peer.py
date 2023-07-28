@@ -5,7 +5,6 @@ from socket import *
 from threading import Thread
 
 
-FILTER_REG = r'[^\w\n|.]'
 IP_REG = r'\b(?:\d{1,3}\.){3}\d{1,3}\b'
 NAME = 'Yuval'
 SERVER_ADDRESS = '10.0.0.29'
@@ -37,11 +36,7 @@ class Peer:
         self.server_sock.bind((SERVER_ADDRESS, SERVER_PORT))
         self.server_sock.listen(5)
 
-        print(f"""
-    Starting peer...
-    SERVER SOCKET: {self.server_sock.getsockname()}
-    CLIENT SOCKET: {self.client_sock.getsockname()}, PEER: {self.client_sock.getpeername()}
-        """)
+        print("starting peer...")
         self.listen()
 
 
