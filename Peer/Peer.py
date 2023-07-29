@@ -10,7 +10,7 @@ import pickle
 IP_REG = r'\b(?:\d{1,3}\.){3}\d{1,3}\b'
 NAME = 'Yuval'
 SERVER_ADDRESS = '10.0.0.29'
-SERVER_PORT = 9998
+SERVER_PORT = 9999
 
 
 class Peer:
@@ -33,8 +33,12 @@ class Peer:
         self.server_sock = socket(AF_INET, SOCK_STREAM)
 
         self.client_sock = socket(AF_INET, SOCK_STREAM)
+        self.client_sock.connect((SERVER_ADDRESS, SERVER_PORT))
+        print("Connected!")
         #send my creds to the admin.
+
         self.send_cred_to_server()
+
         #send my files to the admin.
         self.send_files_to_server()
 
@@ -47,10 +51,9 @@ class Peer:
 
     def send_cred_to_server(self):
         #self.client_sock.connect((SERVER_ADDRESS, SERVER_PORT))
-        self.client_sock.sendall('my creds...'.encode())
-        data = self.client_sock.recv(1024).decode()
+        self.client_sock.sendall('yuval'.encode())
+
         #self.client_sock.close()
-        print(data)
 
     def send_files_to_server(self):
 
@@ -60,9 +63,10 @@ class Peer:
             self.client_sock.sendall('None'.encode())
             return
         list_dir = os.listdir("./Shared_Files")
+        print(pickle.dumps(list_dir))
         self.client_sock.sendall(pickle.dumps(list_dir))
+        print("files sent")
         #self.client_sock.close()
-
 
 
     def listen(self):

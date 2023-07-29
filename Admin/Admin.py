@@ -2,6 +2,7 @@ import os
 from socket import *
 from threading import Thread
 import sqlite3 as sl
+import pickle
 
 SERVER_IP = '10.0.0.29'
 SERVER_PORT = 9999
@@ -39,9 +40,9 @@ class Admin:
             self.update_peers_table(name, addr)
             print("added in table!")
 
-            sock.sendall('thx bye'.encode())
-            peer_files = sock.sock.recv(1024).decode()
-            print(f"recv: {peer_files.decode()}")
+
+            peer_files = pickle.loads(sock.recv(1024))
+            print(f"recv: {peer_files}")
             self.update_files(addr, peer_files)
 
         self.delete_peer(name)
@@ -102,8 +103,8 @@ class Admin:
 
         selection_query = """INSERT INTO online_users VALUES(?, ?, ?)"""
         cursor.execute(selection_query, inserted_data)
-
         entry.commit()
+
         cursor.close()
         entry.close()
         print("New Peer added! ")
@@ -137,7 +138,7 @@ class Admin:
             cursor.execute(selection_query, inserted_data)
 
         entry.commit()
-        cursor.commit()
+        cursor.close()
         entry.close()
         print("New file added! ")
 
