@@ -18,7 +18,6 @@ class Admin:
         self.sock.listen()
         self.start_admin()
 
-
     def start_admin(self):
         while True:
             print(f"Server is running on port {SERVER_PORT}.")
@@ -31,15 +30,19 @@ class Admin:
     def handle_client(self, sock: socket, addr: tuple ):
         self.clients.append(addr)
         while True:
-            data = sock.recv(1024)
-            if not data:
+            #the name of the peer
+            name = sock.recv(1024)
+            if not name:
                 break
-            print(f"Received data from {addr}: {data.decode('utf-8')}")
-            name = sock.recv(1024).decode()
+            print(f"Received data from {addr}: {name}")
+
             self.update_peers_table(name, addr)
             print("added in table!")
 
             sock.sendall('thx bye'.encode())
+            peer_files = sock.sock.recv(1024).decode()
+            print(f"recv: {peer_files.decode()}")
+            self.update_files(addr, peer_files)
 
         self.delete_peer(name)
         sock.close()
@@ -70,10 +73,9 @@ class Admin:
             cursor = entry.cursor()
 
             cursor.execute("""CREATE TABLE files (
-                NAME TEXT,
                 FILE_NAME TEXT,
-                INDEX_OF_SHARE INTEGER,
-                SIZE_OF_SLICE INTEGER
+                IP TEXT,
+                PORT INTEGER
                 )""")
 
             # close all the resources.
@@ -104,7 +106,7 @@ class Admin:
         entry.commit()
         cursor.close()
         entry.close()
-        print("New Peer added!")
+        print("New Peer added! ")
 
     def delete_peer(self, name):
 
@@ -119,6 +121,26 @@ class Admin:
         cursor.close()
         entry.close()
         print(f"peer with the name {name} deleted! ")
+
+    def update_files(self, addr, peer_files) -> None:
+        print("in update_files")
+
+        entry = sl.connect(self.files)
+        cursor = entry.cursor()
+        ip, port = addr
+
+        print(f"peer files are: \n{peer_files}")
+
+        for file in peer_files:
+            inserted_data = (file, ip, port)
+            selection_query = """INSERT INTO files VALUES(?, ?, ?)"""
+            cursor.execute(selection_query, inserted_data)
+
+        entry.commit()
+        cursor.commit()
+        entry.close()
+        print("New file added! ")
+
 
 
 

@@ -1,8 +1,10 @@
 import re
 import os
+import os.path
 import subprocess
 from socket import *
 from threading import Thread
+import pickle
 
 
 IP_REG = r'\b(?:\d{1,3}\.){3}\d{1,3}\b'
@@ -33,6 +35,8 @@ class Peer:
         self.client_sock = socket(AF_INET, SOCK_STREAM)
         #send my creds to the admin.
         self.send_cred_to_server()
+        #send my files to the admin.
+        self.send_files_to_server()
 
         # BIND
         #self.server_sock.bind((SERVER_ADDRESS, SERVER_PORT))
@@ -42,10 +46,24 @@ class Peer:
         #self.listen()
 
     def send_cred_to_server(self):
-        self.client_sock.connect((SERVER_ADDRESS, SERVER_PORT))
+        #self.client_sock.connect((SERVER_ADDRESS, SERVER_PORT))
         self.client_sock.sendall('my creds...'.encode())
         data = self.client_sock.recv(1024).decode()
+        #self.client_sock.close()
         print(data)
+
+    def send_files_to_server(self):
+
+        #self.client_sock.connect((SERVER_ADDRESS, SERVER_PORT))
+        if not (os.path.isdir("./Shared_Files")):
+            print("Pls move your files you want to share into Shared_Files directory.")
+            self.client_sock.sendall('None'.encode())
+            return
+        list_dir = os.listdir("./Shared_Files")
+        self.client_sock.sendall(pickle.dumps(list_dir))
+        #self.client_sock.close()
+
+
 
     def listen(self):
 
