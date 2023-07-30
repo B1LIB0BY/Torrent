@@ -45,6 +45,9 @@ class Peer:
         time.sleep(2.5)
         self.send_files_to_server()
 
+        time.sleep(5)
+        self.req_file()
+
         # BIND.
         self.server_sock.bind((my_address, my_port))
         self.server_sock.listen(5)
@@ -122,6 +125,37 @@ class Peer:
         #send the pickled file doc including the data.
         self.other_sock.sendall(pickle.dumps(file_doc))
         print(f"The file: {file_to_forward}, just sent to {ip}.")
+    def req_file(self):
+        """
+        ::input:: giving the server the name of the file we want.
+        {
+            "type": "request_file"
+            "name": "text4"
+        }
+        
+
+        ::return:: the creds of the file are given us.
+        {
+            "type": "requested_file_creds",
+            "name": name,
+            "size": size_of_file,
+            "provider": provider 
+        }
+
+        """
+        doc = {
+            "type": "request_file",
+            "name": "text3.txt"
+        }
+        self.client_sock.sendall(pickle.dumps(doc))
+        data_back = pickle.loads(self.client_sock.recv(1024))
+        print(f"the data that came back from the server is: {data_back}")
+        if data_back["type"] == "Error":
+            print("file not found!")
+            return
+        
+        print("nice!")
+        return        
 
 
 

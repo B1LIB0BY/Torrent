@@ -42,18 +42,18 @@ class Admin:
         self.update_peers_table(name, addr)
         print("added in table!")
 
-
        
         while True:
             #waiting for a request
             data = sock.recv(1024)
+            data = pickle.loads(data)
+            print(f"data recived from the peer is: {data}")
 
-            if ("update_files".encode()) in data:
-                peer_files = pickle.loads(data)
-                print(f"data recived from the peer is: {peer_files}")
-                self.update_files(addr, peer_files)
-    
-
+            if data["type"] == "update_files":
+                self.update_files(addr, data)
+            if data["type"] == "request_file":
+                self.send_file_cred(sock, addr, data)
+                
             
 
 
@@ -142,21 +142,17 @@ class Admin:
             "type": "update_files",
             "text1": file_size,
             "text2": file_size
-            }
+        }
         """
-        print("in update_files")
 
         entry = sl.connect(self.files)
         cursor = entry.cursor()
         ip, port = addr
 
-        print(f"peer files are: \n{peer_files}")
-
         i = 0
         for file, file_size in peer_files.items():
             if i != 0:
                 inserted_data = (file, file_size, ip)
-                print(f"inserted data: {inserted_data}")
                 selection_query = """INSERT INTO files VALUES(?, ?, ?)"""
                 cursor.execute(selection_query, inserted_data)
             i += 1
@@ -164,7 +160,50 @@ class Admin:
         entry.commit()
         cursor.close()
         entry.close()
-        print("New file added! ")
+        print("files updated! ")
+
+    def send_file_cred(self, sock: socket, addr, data):
+        """
+        The input should be like:
+        {
+            "type": "request_file",
+            "name": "text4"
+        } 
+        """
+        name = data["name"]
+        print(f"the peer looking for file name {name}")
+
+        #Open the database.
+        entry = sl.connect(self.files)
+        cursor = entry.cursor()
+
+        selection_query = """SELECT * FROM files"""
+        cursor.execute(selection_query)
+        rows = cursor.fetchall()
+        file_names = [row[0] for row in rows]        
+
+        print(f"The file names are: {file_names}, and the name is: {name}")
+        if name not in file_names:
+            doc = {
+                "type": "Error"
+            }
+            sock.sendall(pickle.dumps(doc)) 
+            return
+
+        provider = rows[file_names.index(name)][2]
+        size_of_file = rows[file_names.index(name)][1]
+
+        doc = {
+                "type": "requested_file_creds",
+                "name": name,
+                "size": size_of_file,
+                "provider": provider
+            }
+        sock.sendall(pickle.dumps(doc))
+        print("file creds are sent!")
+ 
+
+
 
 
 
