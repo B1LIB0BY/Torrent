@@ -3,6 +3,7 @@ from socket import *
 from threading import Thread
 import sqlite3 as sl
 import pickle
+import time
 
 SERVER_IP = '10.0.0.29'
 SERVER_PORT = 9999
@@ -31,20 +32,30 @@ class Admin:
 
     def handle_client(self, sock: socket, addr: tuple ):
         self.clients.append(addr)
+
+        #the name of the peer
+        name = sock.recv(1024)
+        if not name:
+            return 
+
+        print(f"the address is: {addr}")
+        self.update_peers_table(name, addr)
+        print("added in table!")
+
+
+       
         while True:
-            #the name of the peer
-            name = sock.recv(1024)
-            if not name:
-                break
+            #waiting for a request
+            data = sock.recv(1024)
 
-            print(f"the address is: {addr}")
-            self.update_peers_table(name, addr)
-            print("added in table!")
+            if ("update_files".encode()) in data:
+                peer_files = pickle.loads(data)
+                print(f"data recived from the peer is: {peer_files}")
+                self.update_files(addr, peer_files)
+    
 
+            
 
-            peer_files = pickle.loads(sock.recv(1024))
-            print(f"recv: {peer_files}")
-            self.update_files(addr, peer_files)
 
         self.delete_peer(name)
         sock.close()
@@ -62,7 +73,7 @@ class Admin:
             # Open a table named online-users.
             cursor.execute("""CREATE TABLE online_users (
                 NAME TEXT,
-                ip TEXT,
+                IP TEXT,
                 port INTEGER
                 )""")
 
@@ -76,8 +87,8 @@ class Admin:
 
             cursor.execute("""CREATE TABLE files (
                 FILE_NAME TEXT,
-                IP TEXT,
-                PORT INTEGER
+                SIZE INTEGER,
+                IP TEXT
                 )""")
 
             # close all the resources.
@@ -125,6 +136,14 @@ class Admin:
         print(f"peer with the name {name} deleted! ")
 
     def update_files(self, addr, peer_files) -> None:
+        """
+        The input should be like:
+        {
+            "type": "update_files",
+            "text1": file_size,
+            "text2": file_size
+            }
+        """
         print("in update_files")
 
         entry = sl.connect(self.files)
@@ -133,10 +152,14 @@ class Admin:
 
         print(f"peer files are: \n{peer_files}")
 
-        for file in peer_files:
-            inserted_data = (file, ip, CLIENTS_PORT)
-            selection_query = """INSERT INTO files VALUES(?, ?, ?)"""
-            cursor.execute(selection_query, inserted_data)
+        i = 0
+        for file, file_size in peer_files.items():
+            if i != 0:
+                inserted_data = (file, file_size, ip)
+                print(f"inserted data: {inserted_data}")
+                selection_query = """INSERT INTO files VALUES(?, ?, ?)"""
+                cursor.execute(selection_query, inserted_data)
+            i += 1
 
         entry.commit()
         cursor.close()
