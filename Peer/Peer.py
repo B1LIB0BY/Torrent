@@ -5,12 +5,16 @@ import subprocess
 from socket import *
 from threading import Thread
 import pickle
+import time
 
 
 IP_REG = r'\b(?:\d{1,3}\.){3}\d{1,3}\b'
 NAME = 'Yuval'
 SERVER_ADDRESS = '10.0.0.29'
 SERVER_PORT = 9999
+my_address = '10.0.0.27'
+my_port = 9999
+
 
 
 class Peer:
@@ -34,16 +38,15 @@ class Peer:
 
         self.client_sock = socket(AF_INET, SOCK_STREAM)
         self.client_sock.connect((SERVER_ADDRESS, SERVER_PORT))
-        print("Connected!")
-        #send my creds to the admin.
+        print(f"Connected to admin {(SERVER_ADDRESS, SERVER_PORT)}")
 
         self.send_cred_to_server()
 
-        #send my files to the admin.
+        time.sleep(2.5)
         self.send_files_to_server()
 
         # BIND.
-        self.server_sock.bind((SERVER_ADDRESS, SERVER_PORT))
+        self.server_sock.bind((my_address, my_port))
         self.server_sock.listen(5)
 
         print("starting peer...")
@@ -52,18 +55,35 @@ class Peer:
     def send_cred_to_server(self):
         #self.client_sock.connect((SERVER_ADDRESS, SERVER_PORT))
         self.client_sock.sendall('yuval'.encode())
+        print("creds sent!")
 
+    
 
     def send_files_to_server(self):
-
+        """
+        send_file in this struct 
+        {
+            "type": "update_files",
+            "text1": file_size,
+            "text2": file_size
+        }
+        """
+        
         if not (os.path.isdir("./Shared_Files")):
             print("Pls move your files you want to share into Shared_Files directory.")
             self.client_sock.sendall('None'.encode())
             return
+        doc = {
+            "type": "update_files"
+        }
         list_dir = os.listdir("./Shared_Files")
-        print(pickle.dumps(list_dir))
-        self.client_sock.sendall(pickle.dumps(list_dir))
-        print("files sent")
+        for file in list_dir:
+            doc[file] = os.path.getsize(f"./Shared_Files/{file}")
+        
+        print(f"doc is: {doc}") 
+
+        self.client_sock.sendall(pickle.dumps(doc))
+        print("files sent!")
 
 
     def listen(self):
@@ -72,6 +92,7 @@ class Peer:
                 # establish a connection.
                 other_sock, addr = self.server_sock.accept()
                 Thread(target=self.handle_peer, daemon=True, args=(other_sock, addr)).start()
+
     def handle_peer(self, other_sock, addr):
 
         while True:
@@ -88,7 +109,7 @@ class Peer:
                 self.forward_file(other_sock, file_to_forward, ip)
 
 
-    def forward_file(other_sock, file_to_forward, ip):
+    def forward_file(self, other_sock, file_to_forward, ip):
         f = open(f"./Shared_Files/{file_to_forward}", "r")
         file_data = f.read()
         file_doc = {
