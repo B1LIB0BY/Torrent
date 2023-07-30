@@ -6,6 +6,7 @@ import pickle
 
 SERVER_IP = '10.0.0.29'
 SERVER_PORT = 9999
+CLIENTS_PORT = 9999
 
 class Admin:
     def __init__(self) -> None:
@@ -35,8 +36,8 @@ class Admin:
             name = sock.recv(1024)
             if not name:
                 break
-            print(f"Received data from {addr}: {name}")
 
+            print(f"the address is: {addr}")
             self.update_peers_table(name, addr)
             print("added in table!")
 
@@ -133,7 +134,7 @@ class Admin:
         print(f"peer files are: \n{peer_files}")
 
         for file in peer_files:
-            inserted_data = (file, ip, port)
+            inserted_data = (file, ip, CLIENTS_PORT)
             selection_query = """INSERT INTO files VALUES(?, ?, ?)"""
             cursor.execute(selection_query, inserted_data)
 

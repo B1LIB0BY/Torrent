@@ -42,22 +42,20 @@ class Peer:
         #send my files to the admin.
         self.send_files_to_server()
 
-        # BIND
-        #self.server_sock.bind((SERVER_ADDRESS, SERVER_PORT))
-        #self.server_sock.listen(5)
+        # BIND.
+        self.server_sock.bind((SERVER_ADDRESS, SERVER_PORT))
+        self.server_sock.listen(5)
 
-        #print("starting peer...")
-        #self.listen()
+        print("starting peer...")
+        self.listen()
 
     def send_cred_to_server(self):
         #self.client_sock.connect((SERVER_ADDRESS, SERVER_PORT))
         self.client_sock.sendall('yuval'.encode())
 
-        #self.client_sock.close()
 
     def send_files_to_server(self):
 
-        #self.client_sock.connect((SERVER_ADDRESS, SERVER_PORT))
         if not (os.path.isdir("./Shared_Files")):
             print("Pls move your files you want to share into Shared_Files directory.")
             self.client_sock.sendall('None'.encode())
@@ -66,7 +64,6 @@ class Peer:
         print(pickle.dumps(list_dir))
         self.client_sock.sendall(pickle.dumps(list_dir))
         print("files sent")
-        #self.client_sock.close()
 
 
     def listen(self):
@@ -74,7 +71,38 @@ class Peer:
             while True:
                 # establish a connection.
                 other_sock, addr = self.server_sock.accept()
-                Thread(target=self.handle_peer, daemon=True, args=(other_sock,)).start()
+                Thread(target=self.handle_peer, daemon=True, args=(other_sock, addr)).start()
+    def handle_peer(self, other_sock, addr):
+
+        while True:
+            ip, port = addr
+            data = self.other_sock.recv(1024)
+            if not data:
+                print("No data!")
+                break
+
+            print(f"The data is: {data}")
+            if("get_file:".encode() in data):
+                file_to_forward = str(data).split(":")[1]
+                print(f"the file to forward is: {file_to_forward}")
+                self.forward_file(other_sock, file_to_forward, ip)
+
+
+    def forward_file(other_sock, file_to_forward, ip):
+        f = open(f"./Shared_Files/{file_to_forward}", "r")
+        file_data = f.read()
+        file_doc = {
+                'type': 'send_file',
+                'file_name': file_to_forward,
+                'size': len(file_data),
+                'data': file_data
+                }
+
+        #send the pickled file doc including the data.
+        self.other_sock.sendall(pickle.dumps(file_doc))
+        print(f"The file: {file_to_forward}, just sent to {ip}.")
+
+
 
 
 
