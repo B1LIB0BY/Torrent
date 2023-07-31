@@ -1,0 +1,7 @@
+re==2.2.1
+time==1.0.1
+pickle==4.0
+subprocess==3.5.1
+sqlite3==2.6.0
+pathlib==1.0.1
+tkinter==8.6

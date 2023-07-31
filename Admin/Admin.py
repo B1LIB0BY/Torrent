@@ -51,7 +51,7 @@ class Admin:
 
             if data["type"] == "update_files":
                 self.update_files(addr, data)
-            if data["type"] == "request_file":
+            if data["type"] == "request_file_creds":
                 self.send_file_cred(sock, addr, data)
                 
             
