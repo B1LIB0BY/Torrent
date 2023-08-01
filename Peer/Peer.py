@@ -69,14 +69,17 @@ class Peer:
 
         while True:
             ip, port = addr
-            data = self.other_sock.recv(1024)
+            data = other_sock.recv(1024)
+            data = pickle.loads(data)
+
             if not data:
                 print("No data!")
                 break
 
             print(f"The data is: {data}")
-            if("get_file:".encode() in data):
-                file_to_forward = str(data).split(":")[1]
+
+            if data["type"] == "request_file":
+                file_to_forward = data["name"]
                 print(f"the file to forward is: {file_to_forward}")
                 self.forward_file(other_sock, file_to_forward, ip)
 
@@ -127,7 +130,7 @@ class Peer:
                 }
 
         #send the pickled file doc including the data.
-        self.other_sock.sendall(pickle.dumps(file_doc))
+        other_sock.sendall(pickle.dumps(file_doc))
         print(f"The file: {file_to_forward}, just sent to {ip}.")
 
     def req_file_creds(self):
@@ -150,7 +153,7 @@ class Peer:
         """
         doc = {
             "type": "request_file_creds",
-            "name": "text3.txt"
+            "name": "text5.txt"
         }
         self.client_sock.sendall(pickle.dumps(doc))
         data_back = pickle.loads(self.client_sock.recv(1024))
@@ -159,6 +162,8 @@ class Peer:
             print("file not found!")
             return
         
+        self.download_file(data_back["provider"], data_back["name"]) 
+
         print("nice!")
         return
 
@@ -177,7 +182,7 @@ class Peer:
             "data": data
         }
         """
-        peer_sock = socket(socket.AF_INET, socket.SOCK_STREAM)
+        peer_sock = socket(AF_INET, SOCK_STREAM)
         peer_sock.connect((addr, PEER_PORT))
 
         doc = {
@@ -199,7 +204,7 @@ class Peer:
         file.write(file_data)
         file.close()
         peer_sock.close()
-
+        print("finish dowloading file.")
 
 
 
